@@ -1,6 +1,12 @@
-// Built on 2025-09-16T13:47:32.780Z
+// Built on 2025-09-16T22:18:03.408Z
 (function (global) {
   const MENU_JSON_PATH = "data/menu-data.json";
+  const MEAL_SERVICE_API_URL = "https://open.neis.go.kr/hub/mealServiceDietInfo";
+  const SCHOOL_INFO = {
+    educationOfficeCode: "G10",
+    schoolCode: "7430295",
+    name: "대전동신과학고등학교",
+  };
   const MENU_LABELS = {
     breakfast: "아침",
     lunch: "점심",
@@ -269,9 +275,9 @@
   }
 
   async function requestApiMealInfo(
-    schulCode,
-    atptOfcdcScCode,
-    sdSchulCode,
+    schulCode = SCHOOL_INFO.schoolCode,
+    atptOfcdcScCode = SCHOOL_INFO.educationOfficeCode,
+    sdSchulCode = SCHOOL_INFO.schoolCode,
     callback
   ) {
     try {
@@ -280,6 +286,9 @@
       const availableDates = Object.keys(menus).sort();
       const payload = {
         schulCode: schulCode || "",
+        atptOfcdcScCode: atptOfcdcScCode || "",
+        sdSchulCode: sdSchulCode || "",
+        schoolName: SCHOOL_INFO.name,
         mlsvFromYmd: availableDates[0]?.replace(/-/g, "") || "",
         mlsvToYmd: availableDates[availableDates.length - 1]?.replace(/-/g, "") || "",
         res: {
@@ -302,7 +311,12 @@
   function initialize() {
     cacheDom();
     attachEvents();
-    requestApiMealInfo("T10", "9296071", "0000000", "setMealInfoUi");
+    requestApiMealInfo(
+      SCHOOL_INFO.schoolCode,
+      SCHOOL_INFO.educationOfficeCode,
+      SCHOOL_INFO.schoolCode,
+      "setMealInfoUi"
+    );
   }
 
   if (typeof document !== "undefined") {
@@ -313,61 +327,182 @@
     const fs = require("fs");
     const path = require("path");
 
-    const SAMPLE_BREAKFAST = [
-      ["현미밥", "소고기미역국", "계란말이", "배추김치"],
-      ["잡곡밥", "북어해장국", "닭살야채볶음", "열무김치"],
-      ["김치볶음밥", "유부된장국", "떡갈비", "깍두기"],
-      ["참치마요주먹밥", "맑은콩나물국", "소시지구이", "김자반"],
-      ["수제머핀", "그릭요거트", "계절과일", "아몬드"],
-    ];
+    const MEAL_TYPE_MAP = {
+      "1": "breakfast",
+      "2": "lunch",
+      "3": "dinner",
+    };
 
-    const SAMPLE_LUNCH = [
-      ["흑미밥", "된장찌개", "제육볶음", "시금치나물", "배추김치"],
-      ["보리밥", "순두부찌개", "고등어구이", "콩나물무침", "열무김치"],
-      ["차조밥", "떡국", "닭강정", "치커리사과무침", "깍두기"],
-      ["곤드레밥", "사골우거지국", "갈치조림", "연근조림", "총각김치"],
-      ["카레라이스", "팽이버섯장국", "야채튀김", "양배추샐러드", "깍두기"],
-    ];
-
-    const SAMPLE_DINNER = [
-      ["발아현미밥", "어묵탕", "불고기", "유채겉절이", "포기김치"],
-      ["기장밥", "감자수제비", "꿔바로우", "부추무침", "백김치"],
-      ["곤약볶음밥", "차돌된장국", "버섯불고기", "무생채", "김치"],
-      ["나시고랭", "맑은시래기국", "훈제오리무침", "겉절이", "열무김치"],
-      ["콩나물비빔밥", "미소장국", "연어스테이크", "어린잎샐러드", "깍두기"],
-    ];
-
-    function buildMenuData(pastDays, futureDays) {
-      const today = new Date();
-      today.setHours(0, 0, 0, 0);
-      const menus = {};
-      for (let offset = -pastDays; offset <= futureDays; offset += 1) {
-        const date = new Date(today);
-        date.setDate(today.getDate() + offset);
-        const dateKey = formatDateKey(date);
-        menus[dateKey] = {
-          breakfast: SAMPLE_BREAKFAST[(offset + SAMPLE_BREAKFAST.length) % SAMPLE_BREAKFAST.length],
-          lunch: SAMPLE_LUNCH[(offset + SAMPLE_LUNCH.length) % SAMPLE_LUNCH.length],
-          dinner: SAMPLE_DINNER[(offset + SAMPLE_DINNER.length) % SAMPLE_DINNER.length],
-        };
+    function formatDateForApi(date) {
+      if (!(date instanceof Date) || Number.isNaN(date.getTime())) {
+        throw new Error("Invalid date provided for NEIS API request.");
       }
-      return menus;
+
+      return (
+        `${date.getFullYear()}${formatNumber(date.getMonth() + 1)}${formatNumber(
+          date.getDate()
+        )}`
+      );
     }
 
-    function generateMenuData(options) {
+    function convertYmdToDateKey(value) {
+      if (typeof value !== "string" || value.length !== 8) {
+        return "";
+      }
+
+      return `${value.slice(0, 4)}-${value.slice(4, 6)}-${value.slice(6, 8)}`;
+    }
+
+    function decodeHtmlEntities(text) {
+      if (typeof text !== "string") {
+        return "";
+      }
+
+      return text
+        .replace(/&amp;/gi, "&")
+        .replace(/&lt;/gi, "<")
+        .replace(/&gt;/gi, ">")
+        .replace(/&quot;/gi, '"')
+        .replace(/&#39;/gi, "'");
+    }
+
+    function parseDishList(dishText) {
+      if (!dishText || typeof dishText !== "string") {
+        return [];
+      }
+
+      return dishText
+        .split(/<br\s*\/?>/i)
+        .map((item) => decodeHtmlEntities(item))
+        .map((item) => item.replace(/\(\d+(?:\.\d+)*\)/g, "").trim())
+        .filter(Boolean);
+    }
+
+    function transformRowsToMenus(rows) {
+      return rows.reduce((accumulator, row) => {
+        const dateKey = convertYmdToDateKey(row?.MLSV_YMD);
+        const mealType = MEAL_TYPE_MAP[String(row?.MMEAL_SC_CODE)];
+
+        if (!dateKey || !mealType) {
+          return accumulator;
+        }
+
+        if (!accumulator[dateKey]) {
+          accumulator[dateKey] = {
+            breakfast: [],
+            lunch: [],
+            dinner: [],
+          };
+        }
+
+        accumulator[dateKey][mealType] = parseDishList(row?.DDISH_NM);
+        return accumulator;
+      }, {});
+    }
+
+    async function fetchMealRowsFromApi(apiKey, fromYmd, toYmd, pageSize) {
+      if (!apiKey) {
+        throw new Error("MENU_API environment variable is required to fetch meal data.");
+      }
+
+      if (!fromYmd || !toYmd) {
+        throw new Error("Both from and to dates are required to fetch meal data.");
+      }
+
+      const params = new URLSearchParams({
+        KEY: apiKey,
+        Type: "json",
+        pIndex: "1",
+        pSize: String(Math.max(1, Number(pageSize) || 100)),
+        ATPT_OFCDC_SC_CODE: SCHOOL_INFO.educationOfficeCode,
+        SD_SCHUL_CODE: SCHOOL_INFO.schoolCode,
+        MLSV_FROM_YMD: fromYmd,
+        MLSV_TO_YMD: toYmd,
+      });
+
+      const response = await fetch(`${MEAL_SERVICE_API_URL}?${params.toString()}`);
+
+      if (!response.ok) {
+        throw new Error(`NEIS API request failed with status ${response.status}`);
+      }
+
+      const payload = await response.json();
+      const service = Array.isArray(payload?.mealServiceDietInfo)
+        ? payload.mealServiceDietInfo
+        : null;
+
+      if (!service) {
+        const message =
+          payload?.RESULT?.MESSAGE || "Unexpected response structure from NEIS API.";
+        throw new Error(message);
+      }
+
+      const headEntries = Array.isArray(service[0]?.head) ? service[0].head : [];
+      const resultInfo = headEntries
+        .map((entry) => entry?.RESULT)
+        .find((entry) => entry);
+      const resultCode = resultInfo?.CODE || payload?.RESULT?.CODE;
+      const resultMessage = resultInfo?.MESSAGE || payload?.RESULT?.MESSAGE;
+
+      if (resultCode && !["INFO-000", "INFO-200"].includes(resultCode)) {
+        throw new Error(`NEIS API error ${resultCode}: ${resultMessage || "Unknown error."}`);
+      }
+
+      const rows = Array.isArray(service[1]?.row) ? service[1].row : [];
+
+      if (!rows.length && resultCode === "INFO-200") {
+        return [];
+      }
+
+      return rows;
+    }
+
+    async function generateMenuData(options) {
       const settings = Object.assign(
         {
           pastDays: 3,
           futureDays: 10,
+          pageSize: 100,
           outputPath: path.join(__dirname, "data", "menu-data.json"),
+          apiKey: process.env.MENU_API,
         },
         options || {}
       );
 
-      const menus = buildMenuData(settings.pastDays, settings.futureDays);
+      const pastDays = Math.max(0, Number(settings.pastDays) || 0);
+      const futureDays = Math.max(0, Number(settings.futureDays) || 0);
+      const today = new Date();
+      today.setHours(0, 0, 0, 0);
+
+      const fromDate = new Date(today);
+      fromDate.setDate(today.getDate() - pastDays);
+
+      const toDate = new Date(today);
+      toDate.setDate(today.getDate() + futureDays);
+
+      const fromYmd = formatDateForApi(fromDate);
+      const toYmd = formatDateForApi(toDate);
+
+      const rows = await fetchMealRowsFromApi(
+        settings.apiKey,
+        fromYmd,
+        toYmd,
+        settings.pageSize
+      );
+
+      const menus = transformRowsToMenus(rows);
       const payload = {
         generatedAt: new Date().toISOString(),
         menus,
+        school: {
+          name: SCHOOL_INFO.name,
+          educationOfficeCode: SCHOOL_INFO.educationOfficeCode,
+          schoolCode: SCHOOL_INFO.schoolCode,
+        },
+        dateRange: {
+          from: fromYmd,
+          to: toYmd,
+        },
       };
 
       fs.mkdirSync(path.dirname(settings.outputPath), { recursive: true });
@@ -376,6 +511,7 @@
         `${JSON.stringify(payload, null, 2)}\n`,
         "utf8"
       );
+
       return payload;
     }
 
@@ -392,8 +528,15 @@
             ? path.resolve(process.cwd(), args[outputIndex + 1])
             : undefined;
         const options = outputPath ? { outputPath } : undefined;
-        generateMenuData(options);
-        console.log("급식 데이터 JSON 파일을 생성했습니다.");
+
+        generateMenuData(options)
+          .then(() => {
+            console.log("급식 데이터 JSON 파일을 생성했습니다.");
+          })
+          .catch((error) => {
+            console.error("급식 데이터를 생성하는 중 오류가 발생했습니다.", error);
+            process.exitCode = 1;
+          });
       }
     }
   }
