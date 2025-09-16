@@ -1,0 +1,58 @@
+<!DOCTYPE html>
+<html lang="ko">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <title>오늘의 급식메뉴</title>
+    <link rel="stylesheet" href="style.css" />
+  </head>
+  <body>
+    <div class="page">
+      <header class="page__header">
+        <h1>오늘의 급식메뉴</h1>
+        <p class="page__tagline">
+          원하는 날짜를 선택해서 아침, 점심, 저녁 급식 메뉴를 확인해 보세요.
+        </p>
+      </header>
+      <main class="page__content" id="mealInfoWrapper">
+        <section class="menu-card" aria-live="polite">
+          <div class="menu-card__controls">
+            <div class="menu-card__date-picker">
+              <input
+                type="date"
+                id="menuDateInput"
+                aria-label="급식 날짜 선택"
+              />
+              <button type="button" id="menuDateButton" class="calendar-button">
+                <span aria-hidden="true">📅</span>
+                <span class="calendar-button__label">날짜 선택</span>
+              </button>
+            </div>
+            <div class="menu-card__meta">
+              <p id="selectedDateLabel" class="menu-card__date">로딩 중...</p>
+              <p id="menuUpdatedAt" class="menu-card__updated"></p>
+            </div>
+          </div>
+
+          <table class="menu-table">
+            <thead>
+              <tr>
+                <th scope="col">식사</th>
+                <th scope="col">메뉴</th>
+              </tr>
+            </thead>
+            <tbody id="menuTableBody">
+              <tr>
+                <td colspan="2" class="menu-table__placeholder">
+                  급식 정보를 불러오는 중입니다.
+                </td>
+              </tr>
+            </tbody>
+          </table>
+          <p id="menuMessage" class="menu-card__message" role="status"></p>
+        </section>
+      </main>
+    </div>
+    <script src="menu.js"></script>
+  </body>
+</html>

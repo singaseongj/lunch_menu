@@ -1,0 +1,10 @@
+{
+  "name": "lunch-menu",
+  "version": "1.0.0",
+  "description": "오늘의 급식메뉴 보기",
+  "scripts": {
+    "generate:data": "node menu.js --generate",
+    "build:menu": "node scripts/build-menu.js"
+  },
+  "license": "MIT"
+}
