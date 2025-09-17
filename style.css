@@ -74,13 +74,12 @@ body {
 
 #menuDateInput {
   position: absolute;
-  top: 0;
-  left: 0;
+  inset: 0;
   width: 100%;
   height: 100%;
   opacity: 0;
   cursor: pointer;
-  z-index: 0;
+  z-index: 2; /* Ensure the native control receives direct taps (iOS Safari) */
   pointer-events: auto;
   -webkit-appearance: none;
   -moz-appearance: none;
@@ -102,18 +101,19 @@ body {
   transition: transform 120ms ease, box-shadow 120ms ease, background 120ms ease;
   position: relative;
   z-index: 1;
-  pointer-events: auto;
+  pointer-events: none; /* Allow the invisible input above to capture the tap */
 }
 
-.calendar-button:focus-visible,
-.calendar-button:hover {
+.menu-card__date-picker:focus-within .calendar-button,
+#menuDateInput:focus-visible + .calendar-button,
+#menuDateInput:hover + .calendar-button {
   transform: translateY(-1px);
   box-shadow: 0 12px 24px -16px rgba(25, 118, 210, 0.7);
   background: #0f5fb0;
   outline: none;
 }
 
-.calendar-button:active {
+#menuDateInput:active + .calendar-button {
   transform: scale(0.99);
 }
 
