@@ -35,7 +35,10 @@
     availableDates: [],
     generatedAt: "",
     selectedDate: null,
+    eventsAttached: false,
   };
+
+  let isInitialized = false;
 
   function cacheDom() {
     dom.dateInput = document.getElementById("menuDateInput");
@@ -49,67 +52,96 @@
   }
 
   function attachEvents() {
+    // Prevent attaching events multiple times
+    if (state.eventsAttached) {
+      console.log("Events already attached, skipping...");
+      return;
+    }
+    state.eventsAttached = true;
+    console.log("Attaching events for the first time");
+
     if (dom.dateInput) {
       // Handle date input change
       dom.dateInput.addEventListener("change", (e) => {
+        console.log("Date input changed:", e.target.value);
         updateSelectedDate(e.target.value);
       });
 
       dom.dateInput.addEventListener("input", (e) => {
+        console.log("Date input input:", e.target.value);
         updateSelectedDate(e.target.value);
+      });
+
+      // Also allow clicking directly on the transparent input
+      dom.dateInput.addEventListener("click", (e) => {
+        console.log("Direct input clicked");
+        // Let the native click behavior work
+        e.stopPropagation();
       });
     }
 
     // Improved date picker trigger for desktop and mobile
     if (dom.dateButton) {
       dom.dateButton.addEventListener("click", (e) => {
-        console.log("Button clicked!"); // Debug log
-        e.preventDefault();
-        e.stopPropagation();
+        try {
+          console.log("Button clicked!");
+          e.preventDefault();
+          e.stopPropagation();
 
-        if (dom.dateInput) {
-          console.log("showPicker available:", typeof dom.dateInput.showPicker); // Debug log
-          // Try showPicker() first (modern browsers, desktop)
-          if (typeof dom.dateInput.showPicker === "function") {
-            try {
-              console.log("Calling showPicker()"); // Debug log
-              dom.dateInput.showPicker();
-            } catch (error) {
-              console.log("showPicker failed, falling back to focus/click:", error);
+          if (dom.dateInput) {
+            console.log("showPicker available:", typeof dom.dateInput.showPicker);
+            // Try showPicker() first (modern browsers, desktop)
+            if (typeof dom.dateInput.showPicker === "function") {
+              try {
+                console.log("Calling showPicker()");
+                dom.dateInput.showPicker();
+              } catch (error) {
+                console.log("showPicker failed, falling back to focus/click:", error);
+                fallbackDatePicker();
+              }
+            } else {
+              // Fallback for older browsers
+              console.log("Using fallback");
               fallbackDatePicker();
             }
-          } else {
-            // Fallback for older browsers
-            console.log("Using fallback"); // Debug log
-            fallbackDatePicker();
           }
+        } catch (error) {
+          console.error("Date picker event handler error:", error);
         }
-      });
-    }
-
-    // Also allow clicking directly on the transparent input
-    if (dom.dateInput) {
-      dom.dateInput.addEventListener("click", (e) => {
-        // Let the native click behavior work
-        e.stopPropagation();
       });
     }
   }
 
   function fallbackDatePicker() {
-    // Focus the input first
-    dom.dateInput.focus();
-
-    // Small delay to ensure focus is set
-    setTimeout(() => {
-      // Try click as fallback
-      dom.dateInput.click();
-
-      // For some mobile browsers, we might need to trigger the picker differently
-      if (navigator.userAgent.match(/iPhone|iPad|iPod|Android/i)) {
-        dom.dateInput.dispatchEvent(new Event("touchstart", { bubbles: true }));
-      }
-    }, 100);
+    try {
+      console.log("Running fallback date picker");
+      // Reset any previous state
+      dom.dateInput.blur();
+      
+      // Small delay then focus and click
+      setTimeout(() => {
+        try {
+          console.log("Fallback: focusing and clicking");
+          dom.dateInput.focus();
+          dom.dateInput.click();
+          
+          // Additional trigger for mobile
+          if (navigator.userAgent.match(/iPhone|iPad|iPod|Android/i)) {
+            console.log("Mobile detected, dispatching additional events");
+            const clickEvent = new MouseEvent('click', {
+              bubbles: true,
+              cancelable: true,
+              view: window
+            });
+            dom.dateInput.dispatchEvent(clickEvent);
+          }
+        } catch (error) {
+          console.error("Fallback picker error:", error);
+        }
+      }, 50);
+    } catch (error) {
+      console.error("Fallback function error:", error);
+    }
   }
 
   function formatNumber(value) {
@@ -244,6 +276,7 @@
     if (!dateKey) {
       return;
     }
+    console.log("Updating selected date to:", dateKey);
     state.selectedDate = dateKey;
 
     if (dom.dateInput && dom.dateInput.value !== dateKey) {
@@ -288,6 +321,7 @@
   }
 
   function setMealInfoUi(params) {
+    console.log("Setting meal info UI with params:", params);
     const result = params?.res;
     const menus = result?.menus || {};
     state.menuData = menus;
@@ -328,6 +362,7 @@
     callback
   ) {
     try {
+      console.log("Requesting meal info...");
       const data = await loadMenuData();
       const menus = data?.menus || {};
       const availableDates = Object.keys(menus).sort();
@@ -356,6 +391,13 @@
   }
 
   function initialize() {
+    if (isInitialized) {
+      console.log("Already initialized, skipping...");
+      return;
+    }
+    isInitialized = true;
+    console.log("Initializing application...");
+    
     cacheDom();
     attachEvents();
     requestApiMealInfo(
