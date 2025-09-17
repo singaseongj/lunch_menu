@@ -50,7 +50,7 @@
 
   function attachEvents() {
     if (dom.dateInput) {
-      // 더 안정적인 이벤트 처리
+      // Handle date input change
       dom.dateInput.addEventListener("change", (e) => {
         updateSelectedDate(e.target.value);
       });
@@ -60,15 +60,52 @@
       });
     }
 
-    // showPicker() 관련 코드 제거하고 단순화
+    // Improved date picker trigger for desktop and mobile
     if (dom.dateButton) {
-      dom.dateButton.addEventListener("click", () => {
+      dom.dateButton.addEventListener("click", (e) => {
+        e.preventDefault();
+        e.stopPropagation();
+
         if (dom.dateInput) {
-          dom.dateInput.focus();
-          dom.dateInput.click();
+          // Try showPicker() first (modern browsers, desktop)
+          if (typeof dom.dateInput.showPicker === "function") {
+            try {
+              dom.dateInput.showPicker();
+            } catch (error) {
+              console.log("showPicker failed, falling back to focus/click:", error);
+              fallbackDatePicker();
+            }
+          } else {
+            // Fallback for older browsers
+            fallbackDatePicker();
+          }
         }
       });
     }
+
+    // Also allow clicking directly on the transparent input
+    if (dom.dateInput) {
+      dom.dateInput.addEventListener("click", (e) => {
+        // Let the native click behavior work
+        e.stopPropagation();
+      });
+    }
+  }
+
+  function fallbackDatePicker() {
+    // Focus the input first
+    dom.dateInput.focus();
+
+    // Small delay to ensure focus is set
+    setTimeout(() => {
+      // Try click as fallback
+      dom.dateInput.click();
+
+      // For some mobile browsers, we might need to trigger the picker differently
+      if (navigator.userAgent.match(/iPhone|iPad|iPod|Android/i)) {
+        dom.dateInput.dispatchEvent(new Event("touchstart", { bubbles: true }));
+      }
+    }, 100);
   }
 
   function formatNumber(value) {
