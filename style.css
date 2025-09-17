@@ -70,6 +70,8 @@ body {
   gap: 0.5rem;
   position: relative;
   min-height: 44px; /* Ensure minimum touch target */
+  cursor: pointer;
+  touch-action: manipulation;
 }
 
 #menuDateInput {
@@ -84,6 +86,7 @@ body {
   -webkit-appearance: none;
   -moz-appearance: none;
   appearance: none;
+  font-size: 16px; /* Prevent iOS Safari zoom */
 }
 
 .calendar-button {
