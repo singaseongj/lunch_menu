@@ -1,4 +1,4 @@
-// Built on 2025-09-17T08:11:10.106Z
+// Built on 2025-09-17T08:43:11.414Z
 (function (global) {
   const MENU_JSON_PATH = "data/menu-data.json";
   const MEAL_SERVICE_API_URL = "https://open.neis.go.kr/hub/mealServiceDietInfo";
@@ -36,7 +36,10 @@
     availableDates: [],
     generatedAt: "",
     selectedDate: null,
+    eventsAttached: false,
   };
+
+  let isInitialized = false;
 
   function cacheDom() {
     dom.dateInput = document.getElementById("menuDateInput");
@@ -50,67 +53,96 @@
   }
 
   function attachEvents() {
+    // Prevent attaching events multiple times
+    if (state.eventsAttached) {
+      console.log("Events already attached, skipping...");
+      return;
+    }
+    state.eventsAttached = true;
+    console.log("Attaching events for the first time");
+
     if (dom.dateInput) {
       // Handle date input change
       dom.dateInput.addEventListener("change", (e) => {
+        console.log("Date input changed:", e.target.value);
         updateSelectedDate(e.target.value);
       });
 
       dom.dateInput.addEventListener("input", (e) => {
+        console.log("Date input input:", e.target.value);
         updateSelectedDate(e.target.value);
+      });
+
+      // Also allow clicking directly on the transparent input
+      dom.dateInput.addEventListener("click", (e) => {
+        console.log("Direct input clicked");
+        // Let the native click behavior work
+        e.stopPropagation();
       });
     }
 
     // Improved date picker trigger for desktop and mobile
     if (dom.dateButton) {
       dom.dateButton.addEventListener("click", (e) => {
-        console.log("Button clicked!"); // Debug log
-        e.preventDefault();
-        e.stopPropagation();
+        try {
+          console.log("Button clicked!");
+          e.preventDefault();
+          e.stopPropagation();
 
-        if (dom.dateInput) {
-          console.log("showPicker available:", typeof dom.dateInput.showPicker); // Debug log
-          // Try showPicker() first (modern browsers, desktop)
-          if (typeof dom.dateInput.showPicker === "function") {
-            try {
-              console.log("Calling showPicker()"); // Debug log
-              dom.dateInput.showPicker();
-            } catch (error) {
-              console.log("showPicker failed, falling back to focus/click:", error);
+          if (dom.dateInput) {
+            console.log("showPicker available:", typeof dom.dateInput.showPicker);
+            // Try showPicker() first (modern browsers, desktop)
+            if (typeof dom.dateInput.showPicker === "function") {
+              try {
+                console.log("Calling showPicker()");
+                dom.dateInput.showPicker();
+              } catch (error) {
+                console.log("showPicker failed, falling back to focus/click:", error);
+                fallbackDatePicker();
+              }
+            } else {
+              // Fallback for older browsers
+              console.log("Using fallback");
               fallbackDatePicker();
             }
-          } else {
-            // Fallback for older browsers
-            console.log("Using fallback"); // Debug log
-            fallbackDatePicker();
           }
+        } catch (error) {
+          console.error("Date picker event handler error:", error);
         }
-      });
-    }
-
-    // Also allow clicking directly on the transparent input
-    if (dom.dateInput) {
-      dom.dateInput.addEventListener("click", (e) => {
-        // Let the native click behavior work
-        e.stopPropagation();
       });
     }
   }
 
   function fallbackDatePicker() {
-    // Focus the input first
-    dom.dateInput.focus();
-
-    // Small delay to ensure focus is set
-    setTimeout(() => {
-      // Try click as fallback
-      dom.dateInput.click();
-
-      // For some mobile browsers, we might need to trigger the picker differently
-      if (navigator.userAgent.match(/iPhone|iPad|iPod|Android/i)) {
-        dom.dateInput.dispatchEvent(new Event("touchstart", { bubbles: true }));
-      }
-    }, 100);
+    try {
+      console.log("Running fallback date picker");
+      // Reset any previous state
+      dom.dateInput.blur();
+      
+      // Small delay then focus and click
+      setTimeout(() => {
+        try {
+          console.log("Fallback: focusing and clicking");
+          dom.dateInput.focus();
+          dom.dateInput.click();
+          
+          // Additional trigger for mobile
+          if (navigator.userAgent.match(/iPhone|iPad|iPod|Android/i)) {
+            console.log("Mobile detected, dispatching additional events");
+            const clickEvent = new MouseEvent('click', {
+              bubbles: true,
+              cancelable: true,
+              view: window
+            });
+            dom.dateInput.dispatchEvent(clickEvent);
+          }
+        } catch (error) {
+          console.error("Fallback picker error:", error);
+        }
+      }, 50);
+    } catch (error) {
+      console.error("Fallback function error:", error);
+    }
   }
 
   function formatNumber(value) {
@@ -245,6 +277,7 @@
     if (!dateKey) {
       return;
     }
+    console.log("Updating selected date to:", dateKey);
     state.selectedDate = dateKey;
 
     if (dom.dateInput && dom.dateInput.value !== dateKey) {
@@ -289,6 +322,7 @@
   }
 
   function setMealInfoUi(params) {
+    console.log("Setting meal info UI with params:", params);
     const result = params?.res;
     const menus = result?.menus || {};
     state.menuData = menus;
@@ -329,6 +363,7 @@
     callback
   ) {
     try {
+      console.log("Requesting meal info...");
       const data = await loadMenuData();
       const menus = data?.menus || {};
       const availableDates = Object.keys(menus).sort();
@@ -357,6 +392,13 @@
   }
 
   function initialize() {
+    if (isInitialized) {
+      console.log("Already initialized, skipping...");
+      return;
+    }
+    isInitialized = true;
+    console.log("Initializing application...");
+    
     cacheDom();
     attachEvents();
     requestApiMealInfo(
@@ -479,52 +521,89 @@
         throw new Error("Both from and to dates are required to fetch meal data.");
       }
 
-      const params = new URLSearchParams({
-        KEY: apiKey,
-        Type: "json",
-        pIndex: "1",
-        pSize: String(Math.max(1, Number(pageSize) || 100)),
-        ATPT_OFCDC_SC_CODE: SCHOOL_INFO.educationOfficeCode,
-        SD_SCHUL_CODE: SCHOOL_INFO.schoolCode,
-        MLSV_FROM_YMD: fromYmd,
-        MLSV_TO_YMD: toYmd,
-      });
+      const safePageSize = Math.max(1, Number(pageSize) || 100);
+      const collectedRows = [];
+      let totalCount = null;
+      let pageIndex = 1;
 
-      const response = await fetch(`${MEAL_SERVICE_API_URL}?${params.toString()}`);
+      // The NEIS API paginates results; iterate until we collect everything.
+      while (true) {
+        const params = new URLSearchParams({
+          KEY: apiKey,
+          Type: "json",
+          pIndex: String(pageIndex),
+          pSize: String(safePageSize),
+          ATPT_OFCDC_SC_CODE: SCHOOL_INFO.educationOfficeCode,
+          SD_SCHUL_CODE: SCHOOL_INFO.schoolCode,
+          MLSV_FROM_YMD: fromYmd,
+          MLSV_TO_YMD: toYmd,
+        });
 
-      if (!response.ok) {
-        throw new Error(`NEIS API request failed with status ${response.status}`);
+        const response = await fetch(`${MEAL_SERVICE_API_URL}?${params.toString()}`);
+
+        if (!response.ok) {
+          throw new Error(`NEIS API request failed with status ${response.status}`);
+        }
+
+        const payload = await response.json();
+        const service = Array.isArray(payload?.mealServiceDietInfo)
+          ? payload.mealServiceDietInfo
+          : null;
+
+        if (!service) {
+          const message =
+            payload?.RESULT?.MESSAGE || "Unexpected response structure from NEIS API.";
+          throw new Error(message);
+        }
+
+        const headEntries = Array.isArray(service[0]?.head) ? service[0].head : [];
+        const resultInfo = headEntries
+          .map((entry) => entry?.RESULT)
+          .find((entry) => entry);
+        const resultCode = resultInfo?.CODE || payload?.RESULT?.CODE;
+        const resultMessage = resultInfo?.MESSAGE || payload?.RESULT?.MESSAGE;
+
+        if (resultCode && !["INFO-000", "INFO-200"].includes(resultCode)) {
+          throw new Error(
+            `NEIS API error ${resultCode}: ${resultMessage || "Unknown error."}`
+          );
+        }
+
+        if (totalCount === null) {
+          const totalEntry = headEntries.find((entry) =>
+            entry && typeof entry.list_total_count !== "undefined"
+          );
+          if (totalEntry) {
+            const parsedTotal = Number(totalEntry.list_total_count);
+            if (!Number.isNaN(parsedTotal)) {
+              totalCount = parsedTotal;
+            }
+          }
+        }
+
+        const rows = Array.isArray(service[1]?.row) ? service[1].row : [];
+
+        if (!rows.length) {
+          if (resultCode === "INFO-200" || totalCount === 0 || pageIndex > 1) {
+            break;
+          }
+        } else {
+          collectedRows.push(...rows);
+        }
+
+        const fetchedCount = collectedRows.length;
+        const fetchedEverything =
+          (typeof totalCount === "number" && totalCount > 0 && fetchedCount >= totalCount) ||
+          rows.length < safePageSize;
+
+        if (fetchedEverything) {
+          break;
+        }
+
+        pageIndex += 1;
       }
 
-      const payload = await response.json();
-      const service = Array.isArray(payload?.mealServiceDietInfo)
-        ? payload.mealServiceDietInfo
-        : null;
-
-      if (!service) {
-        const message =
-          payload?.RESULT?.MESSAGE || "Unexpected response structure from NEIS API.";
-        throw new Error(message);
-      }
-
-      const headEntries = Array.isArray(service[0]?.head) ? service[0].head : [];
-      const resultInfo = headEntries
-        .map((entry) => entry?.RESULT)
-        .find((entry) => entry);
-      const resultCode = resultInfo?.CODE || payload?.RESULT?.CODE;
-      const resultMessage = resultInfo?.MESSAGE || payload?.RESULT?.MESSAGE;
-
-      if (resultCode && !["INFO-000", "INFO-200"].includes(resultCode)) {
-        throw new Error(`NEIS API error ${resultCode}: ${resultMessage || "Unknown error."}`);
-      }
-
-      const rows = Array.isArray(service[1]?.row) ? service[1].row : [];
-
-      if (!rows.length && resultCode === "INFO-200") {
-        return [];
-      }
-
-      return rows;
+      return collectedRows;
     }
 
     async function generateMenuData(options) {
