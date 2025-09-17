@@ -63,13 +63,16 @@
     // Improved date picker trigger for desktop and mobile
     if (dom.dateButton) {
       dom.dateButton.addEventListener("click", (e) => {
+        console.log("Button clicked!"); // Debug log
         e.preventDefault();
         e.stopPropagation();
 
         if (dom.dateInput) {
+          console.log("showPicker available:", typeof dom.dateInput.showPicker); // Debug log
           // Try showPicker() first (modern browsers, desktop)
           if (typeof dom.dateInput.showPicker === "function") {
             try {
+              console.log("Calling showPicker()"); // Debug log
               dom.dateInput.showPicker();
             } catch (error) {
               console.log("showPicker failed, falling back to focus/click:", error);
@@ -77,6 +80,7 @@
             }
           } else {
             // Fallback for older browsers
+            console.log("Using fallback"); // Debug log
             fallbackDatePicker();
           }
         }
