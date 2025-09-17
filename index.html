@@ -22,17 +22,17 @@
       <main class="page__content" id="mealInfoWrapper">
         <section class="menu-card" aria-live="polite">
           <div class="menu-card__controls">
-            <div class="menu-card__date-picker">
+            <label class="menu-card__date-picker">
               <input
                 type="date"
                 id="menuDateInput"
                 aria-label="급식 날짜 선택"
               />
-              <div class="calendar-button">
+              <span class="calendar-button">
                 <span aria-hidden="true">📅</span>
                 <span class="calendar-button__label">날짜 선택</span>
-              </div>
-            </div>
+              </span>
+            </label>
             <div class="menu-card__meta">
               <p id="selectedDateLabel" class="menu-card__date">로딩 중...</p>
               <p id="menuUpdatedAt" class="menu-card__updated"></p>
