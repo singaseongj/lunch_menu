@@ -1,4 +1,4 @@
-// Built on 2025-09-16T22:18:03.408Z
+// Built on 2025-09-17T07:29:08.410Z
 (function (global) {
   const MENU_JSON_PATH = "data/menu-data.json";
   const MEAL_SERVICE_API_URL = "https://open.neis.go.kr/hub/mealServiceDietInfo";
@@ -51,17 +51,19 @@
 
   function attachEvents() {
     if (dom.dateInput) {
-      dom.dateInput.addEventListener("change", function (event) {
-        updateSelectedDate(event.target.value);
+      // 더 안정적인 이벤트 처리
+      dom.dateInput.addEventListener("change", (e) => {
+        updateSelectedDate(e.target.value);
       });
 
-      dom.dateInput.addEventListener("input", function (event) {
-        updateSelectedDate(event.target.value);
+      dom.dateInput.addEventListener("input", (e) => {
+        updateSelectedDate(e.target.value);
       });
     }
 
+    // showPicker() 관련 코드 제거하고 단순화
     if (dom.dateButton) {
-      dom.dateButton.addEventListener("click", function () {
+      dom.dateButton.addEventListener("click", () => {
         if (dom.dateInput) {
           dom.dateInput.focus();
           dom.dateInput.click();
@@ -350,6 +352,28 @@
       );
     }
 
+    function getMonthlyRange(baseDate, pastMonths, futureMonths) {
+      if (!(baseDate instanceof Date) || Number.isNaN(baseDate.getTime())) {
+        throw new Error("A valid base date is required to compute the menu range.");
+      }
+
+      const safePastMonths = Math.max(0, Number(pastMonths) || 0);
+      const safeFutureMonths = Math.max(0, Number(futureMonths) || 0);
+
+      const fromDate = new Date(
+        baseDate.getFullYear(),
+        baseDate.getMonth() - safePastMonths,
+        1
+      );
+      const toDate = new Date(
+        baseDate.getFullYear(),
+        baseDate.getMonth() + safeFutureMonths + 1,
+        0
+      );
+
+      return { fromDate, toDate };
+    }
+
     function convertYmdToDateKey(value) {
       if (typeof value !== "string" || value.length !== 8) {
         return "";
@@ -463,27 +487,24 @@
     }
 
     async function generateMenuData(options) {
-      const settings = Object.assign(
-        {
-          pastDays: 3,
-          futureDays: 10,
-          pageSize: 100,
-          outputPath: path.join(__dirname, "data", "menu-data.json"),
-          apiKey: process.env.MENU_API,
-        },
-        options || {}
-      );
+      const defaults = {
+        months: { past: 1, future: 1 },
+        pageSize: 100,
+        outputPath: path.join(__dirname, "data", "menu-data.json"),
+        apiKey: process.env.MENU_API,
+      };
 
-      const pastDays = Math.max(0, Number(settings.pastDays) || 0);
-      const futureDays = Math.max(0, Number(settings.futureDays) || 0);
+      const settings = Object.assign({}, defaults, options || {});
+      const months = Object.assign({}, defaults.months, settings.months || {});
+
       const today = new Date();
       today.setHours(0, 0, 0, 0);
 
-      const fromDate = new Date(today);
-      fromDate.setDate(today.getDate() - pastDays);
-
-      const toDate = new Date(today);
-      toDate.setDate(today.getDate() + futureDays);
+      const { fromDate, toDate } = getMonthlyRange(
+        today,
+        months.past,
+        months.future
+      );
 
       const fromYmd = formatDateForApi(fromDate);
       const toYmd = formatDateForApi(toDate);

@@ -351,6 +351,28 @@
       );
     }
 
+    function getMonthlyRange(baseDate, pastMonths, futureMonths) {
+      if (!(baseDate instanceof Date) || Number.isNaN(baseDate.getTime())) {
+        throw new Error("A valid base date is required to compute the menu range.");
+      }
+
+      const safePastMonths = Math.max(0, Number(pastMonths) || 0);
+      const safeFutureMonths = Math.max(0, Number(futureMonths) || 0);
+
+      const fromDate = new Date(
+        baseDate.getFullYear(),
+        baseDate.getMonth() - safePastMonths,
+        1
+      );
+      const toDate = new Date(
+        baseDate.getFullYear(),
+        baseDate.getMonth() + safeFutureMonths + 1,
+        0
+      );
+
+      return { fromDate, toDate };
+    }
+
     function convertYmdToDateKey(value) {
       if (typeof value !== "string" || value.length !== 8) {
         return "";
@@ -464,27 +486,24 @@
     }
 
     async function generateMenuData(options) {
-      const settings = Object.assign(
-        {
-          pastDays: 3,
-          futureDays: 10,
-          pageSize: 100,
-          outputPath: path.join(__dirname, "data", "menu-data.json"),
-          apiKey: process.env.MENU_API,
-        },
-        options || {}
-      );
+      const defaults = {
+        months: { past: 1, future: 1 },
+        pageSize: 100,
+        outputPath: path.join(__dirname, "data", "menu-data.json"),
+        apiKey: process.env.MENU_API,
+      };
 
-      const pastDays = Math.max(0, Number(settings.pastDays) || 0);
-      const futureDays = Math.max(0, Number(settings.futureDays) || 0);
+      const settings = Object.assign({}, defaults, options || {});
+      const months = Object.assign({}, defaults.months, settings.months || {});
+
       const today = new Date();
       today.setHours(0, 0, 0, 0);
 
-      const fromDate = new Date(today);
-      fromDate.setDate(today.getDate() - pastDays);
-
-      const toDate = new Date(today);
-      toDate.setDate(today.getDate() + futureDays);
+      const { fromDate, toDate } = getMonthlyRange(
+        today,
+        months.past,
+        months.future
+      );
 
       const fromYmd = formatDateForApi(fromDate);
       const toYmd = formatDateForApi(toDate);
