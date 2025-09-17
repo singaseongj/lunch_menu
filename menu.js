@@ -75,23 +75,8 @@
       // Also allow clicking directly on the transparent input
       dom.dateInput.addEventListener("click", (e) => {
         console.log("Direct input clicked");
-        // Try to open the date picker when input is clicked directly
-+       e.stopPropagation();
-+       
-+       // Try showPicker() first (modern browsers, desktop)
-+       if (typeof dom.dateInput.showPicker === "function") {
-+         try {
-+           console.log("Direct input: Calling showPicker()");
-+           dom.dateInput.showPicker();
-+         } catch (error) {
-+           console.log("Direct input: showPicker failed, falling back:", error);
-+           fallbackDatePicker();
-+         }
-+       } else {
-+         // Fallback for older browsers
-+         console.log("Direct input: Using fallback");
-+         fallbackDatePicker();
-+       }
+        // Let the native click behavior work
+        e.stopPropagation();
       });
     }
 
