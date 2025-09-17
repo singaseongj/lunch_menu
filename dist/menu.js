@@ -1,4 +1,4 @@
-// Built on 2025-09-17T08:43:11.414Z
+// Built on 2025-09-17T11:39:23.996Z
 (function (global) {
   const MENU_JSON_PATH = "data/menu-data.json";
   const MEAL_SERVICE_API_URL = "https://open.neis.go.kr/hub/mealServiceDietInfo";
@@ -55,27 +55,22 @@
   function attachEvents() {
     // Prevent attaching events multiple times
     if (state.eventsAttached) {
-      console.log("Events already attached, skipping...");
       return;
     }
     state.eventsAttached = true;
-    console.log("Attaching events for the first time");
 
     if (dom.dateInput) {
       // Handle date input change
       dom.dateInput.addEventListener("change", (e) => {
-        console.log("Date input changed:", e.target.value);
         updateSelectedDate(e.target.value);
       });
 
       dom.dateInput.addEventListener("input", (e) => {
-        console.log("Date input input:", e.target.value);
         updateSelectedDate(e.target.value);
       });
 
       // Also allow clicking directly on the transparent input
       dom.dateInput.addEventListener("click", (e) => {
-        console.log("Direct input clicked");
         // Let the native click behavior work
         e.stopPropagation();
       });
@@ -85,24 +80,19 @@
     if (dom.dateButton) {
       dom.dateButton.addEventListener("click", (e) => {
         try {
-          console.log("Button clicked!");
           e.preventDefault();
           e.stopPropagation();
 
           if (dom.dateInput) {
-            console.log("showPicker available:", typeof dom.dateInput.showPicker);
             // Try showPicker() first (modern browsers, desktop)
             if (typeof dom.dateInput.showPicker === "function") {
               try {
-                console.log("Calling showPicker()");
                 dom.dateInput.showPicker();
-              } catch (error) {
-                console.log("showPicker failed, falling back to focus/click:", error);
+              } catch {
                 fallbackDatePicker();
               }
             } else {
               // Fallback for older browsers
-              console.log("Using fallback");
               fallbackDatePicker();
             }
           }
@@ -115,20 +105,17 @@
 
   function fallbackDatePicker() {
     try {
-      console.log("Running fallback date picker");
       // Reset any previous state
       dom.dateInput.blur();
-      
+
       // Small delay then focus and click
       setTimeout(() => {
         try {
-          console.log("Fallback: focusing and clicking");
           dom.dateInput.focus();
           dom.dateInput.click();
-          
+
           // Additional trigger for mobile
           if (navigator.userAgent.match(/iPhone|iPad|iPod|Android/i)) {
-            console.log("Mobile detected, dispatching additional events");
             const clickEvent = new MouseEvent('click', {
               bubbles: true,
               cancelable: true,
@@ -277,7 +264,6 @@
     if (!dateKey) {
       return;
     }
-    console.log("Updating selected date to:", dateKey);
     state.selectedDate = dateKey;
 
     if (dom.dateInput && dom.dateInput.value !== dateKey) {
@@ -322,7 +308,6 @@
   }
 
   function setMealInfoUi(params) {
-    console.log("Setting meal info UI with params:", params);
     const result = params?.res;
     const menus = result?.menus || {};
     state.menuData = menus;
@@ -363,7 +348,6 @@
     callback
   ) {
     try {
-      console.log("Requesting meal info...");
       const data = await loadMenuData();
       const menus = data?.menus || {};
       const availableDates = Object.keys(menus).sort();
@@ -393,12 +377,10 @@
 
   function initialize() {
     if (isInitialized) {
-      console.log("Already initialized, skipping...");
       return;
     }
     isInitialized = true;
-    console.log("Initializing application...");
-    
+
     cacheDom();
     attachEvents();
     requestApiMealInfo(
@@ -675,14 +657,10 @@
             : undefined;
         const options = outputPath ? { outputPath } : undefined;
 
-        generateMenuData(options)
-          .then(() => {
-            console.log("급식 데이터 JSON 파일을 생성했습니다.");
-          })
-          .catch((error) => {
-            console.error("급식 데이터를 생성하는 중 오류가 발생했습니다.", error);
-            process.exitCode = 1;
-          });
+        generateMenuData(options).catch((error) => {
+          console.error("급식 데이터를 생성하는 중 오류가 발생했습니다.", error);
+          process.exitCode = 1;
+        });
       }
     }
   }
