@@ -47,20 +47,23 @@
   }
 
   function attachEvents() {
+    // label 클릭으로 열리므로 실제로는 핸들러가 필요 없지만,
+    // showPicker 지원 브라우저(안드로이드 크롬 등)에서 즉시 열기 최적화:
     if (dom.dateButton && dom.dateInput) {
-      dom.dateButton.addEventListener("click", function () {
+      dom.dateButton.addEventListener("click", (e) => {
         if (typeof dom.dateInput.showPicker === "function") {
           dom.dateInput.showPicker();
-        } else {
-          dom.dateInput.focus();
+          e.preventDefault(); // 이중 오픈 방지
         }
+        // 미지원(iOS)에서는 label 클릭 자체로 피커가 열립니다.
       });
     }
 
     if (dom.dateInput) {
-      dom.dateInput.addEventListener("input", function (event) {
-        updateSelectedDate(event.target.value);
-      });
+      // iOS 대응: change도 함께 리슨
+      const onPick = (e) => updateSelectedDate(e.target.value);
+      dom.dateInput.addEventListener("input", onPick);
+      dom.dateInput.addEventListener("change", onPick);
     }
   }
 
