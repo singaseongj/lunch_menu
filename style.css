@@ -207,6 +207,12 @@ body {
   .calendar-button {
     pointer-events: auto; /* button works normally */
   }
+  .calendar-button input[type="date"] {
+  position: absolute;
+  inset: 0;
+  opacity: 0;       /* invisible but clickable */
+  cursor: pointer;
+  }
 }
 
 @media (max-width: 640px) {
