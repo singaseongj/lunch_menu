@@ -40,7 +40,9 @@
 
   function cacheDom() {
     dom.dateInput = document.getElementById("menuDateInput");
-    dom.dateButton = document.getElementById("menuDateButton");
+    dom.dateButton = document.querySelector(
+      ".menu-card__date-picker .calendar-button"
+    );
     dom.dateLabel = document.getElementById("selectedDateLabel");
     dom.updatedLabel = document.getElementById("menuUpdatedAt");
     dom.tableBody = document.getElementById("menuTableBody");
@@ -48,19 +50,22 @@
   }
 
   function attachEvents() {
-    if (dom.dateButton && dom.dateInput) {
-      dom.dateButton.addEventListener("click", function () {
-        if (typeof dom.dateInput.showPicker === "function") {
-          dom.dateInput.showPicker();
-        } else {
-          dom.dateInput.focus();
-        }
+    if (dom.dateInput) {
+      dom.dateInput.addEventListener("change", function (event) {
+        updateSelectedDate(event.target.value);
+      });
+
+      dom.dateInput.addEventListener("input", function (event) {
+        updateSelectedDate(event.target.value);
       });
     }
 
-    if (dom.dateInput) {
-      dom.dateInput.addEventListener("input", function (event) {
-        updateSelectedDate(event.target.value);
+    if (dom.dateButton) {
+      dom.dateButton.addEventListener("click", function () {
+        if (dom.dateInput) {
+          dom.dateInput.focus();
+          dom.dateInput.click();
+        }
       });
     }
   }

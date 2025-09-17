@@ -68,17 +68,18 @@ body {
   display: flex;
   align-items: center;
   gap: 0.5rem;
+  position: relative;
 }
 
 #menuDateInput {
   position: absolute;
-  width: 1px;
-  height: 1px;
-  padding: 0;
-  margin: -1px;
-  overflow: hidden;
-  clip: rect(0 0 0 0);
-  border: 0;
+  top: 0;
+  left: 0;
+  width: 100%;
+  height: 100%;
+  opacity: 0;
+  cursor: pointer;
+  z-index: 2;
 }
 
 .calendar-button {
@@ -94,6 +95,8 @@ body {
   cursor: pointer;
   box-shadow: 0 8px 16px -12px rgba(25, 118, 210, 0.9);
   transition: transform 120ms ease, box-shadow 120ms ease, background 120ms ease;
+  position: relative;
+  z-index: 1;
 }
 
 .calendar-button:focus-visible,

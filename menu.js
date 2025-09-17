@@ -39,7 +39,9 @@
 
   function cacheDom() {
     dom.dateInput = document.getElementById("menuDateInput");
-    dom.dateButton = document.getElementById("menuDateButton");
+    dom.dateButton = document.querySelector(
+      ".menu-card__date-picker .calendar-button"
+    );
     dom.dateLabel = document.getElementById("selectedDateLabel");
     dom.updatedLabel = document.getElementById("menuUpdatedAt");
     dom.tableBody = document.getElementById("menuTableBody");
@@ -47,23 +49,25 @@
   }
 
   function attachEvents() {
-    // label 클릭으로 열리므로 실제로는 핸들러가 필요 없지만,
-    // showPicker 지원 브라우저(안드로이드 크롬 등)에서 즉시 열기 최적화:
-    if (dom.dateButton && dom.dateInput) {
-      dom.dateButton.addEventListener("click", (e) => {
-        if (typeof dom.dateInput.showPicker === "function") {
-          dom.dateInput.showPicker();
-          e.preventDefault(); // 이중 오픈 방지
-        }
-        // 미지원(iOS)에서는 label 클릭 자체로 피커가 열립니다.
+    if (dom.dateInput) {
+      // 더 안정적인 이벤트 처리
+      dom.dateInput.addEventListener("change", (e) => {
+        updateSelectedDate(e.target.value);
+      });
+
+      dom.dateInput.addEventListener("input", (e) => {
+        updateSelectedDate(e.target.value);
       });
     }
 
-    if (dom.dateInput) {
-      // iOS 대응: change도 함께 리슨
-      const onPick = (e) => updateSelectedDate(e.target.value);
-      dom.dateInput.addEventListener("input", onPick);
-      dom.dateInput.addEventListener("change", onPick);
+    // showPicker() 관련 코드 제거하고 단순화
+    if (dom.dateButton) {
+      dom.dateButton.addEventListener("click", () => {
+        if (dom.dateInput) {
+          dom.dateInput.focus();
+          dom.dateInput.click();
+        }
+      });
     }
   }
 
