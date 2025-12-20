@@ -327,15 +327,21 @@
         : "";
     }
 
+    const todayKey = formatDateKey(new Date());
+    const earliestDate = state.availableDates[0];
+    const latestDate = state.availableDates[state.availableDates.length - 1];
+
     if (dom.dateInput) {
-      dom.dateInput.min = state.availableDates[0];
-      dom.dateInput.max = state.availableDates[state.availableDates.length - 1];
+      const minDate =
+        todayKey && todayKey < earliestDate ? todayKey : earliestDate;
+      const maxDate =
+        todayKey && todayKey > latestDate ? todayKey : latestDate;
+
+      dom.dateInput.min = minDate;
+      dom.dateInput.max = maxDate;
     }
 
-    const todayKey = formatDateKey(new Date());
-    const initialDate = state.availableDates.includes(todayKey)
-      ? todayKey
-      : state.availableDates[0];
+    const initialDate = todayKey || earliestDate;
 
     updateSelectedDate(initialDate);
   }
