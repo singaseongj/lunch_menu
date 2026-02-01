@@ -538,8 +538,14 @@
           : null;
 
         if (!service) {
+          const resultCode = payload?.RESULT?.CODE;
           const message =
             payload?.RESULT?.MESSAGE || "Unexpected response structure from NEIS API.";
+
+          if (resultCode === "INFO-200") {
+            return [];
+          }
+
           throw new Error(message);
         }
 
