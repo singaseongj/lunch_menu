@@ -1,4 +1,4 @@
-// Built on 2025-12-20T03:19:00.274Z
+// Built on 2026-02-01T02:37:42.427Z
 (function (global) {
   const MENU_JSON_PATH = "data/menu-data.json";
   const MEAL_SERVICE_API_URL = "https://open.neis.go.kr/hub/mealServiceDietInfo";
@@ -539,8 +539,14 @@
           : null;
 
         if (!service) {
+          const resultCode = payload?.RESULT?.CODE;
           const message =
             payload?.RESULT?.MESSAGE || "Unexpected response structure from NEIS API.";
+
+          if (resultCode === "INFO-200") {
+            return [];
+          }
+
           throw new Error(message);
         }
 
