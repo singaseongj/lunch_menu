@@ -499,6 +499,45 @@
       }, {});
     }
 
+    function isCertificateValidationError(error) {
+      const causeCode = error?.cause?.code;
+      return [
+        "UNABLE_TO_VERIFY_LEAF_SIGNATURE",
+        "UNABLE_TO_GET_ISSUER_CERT_LOCALLY",
+        "SELF_SIGNED_CERT_IN_CHAIN",
+      ].includes(causeCode);
+    }
+
+    async function fetchWithTlsFallback(url) {
+      try {
+        return await fetch(url);
+      } catch (error) {
+        const fallbackDisabled =
+          process.env.MENU_API_DISABLE_INSECURE_TLS_FALLBACK === "1";
+
+        if (!isCertificateValidationError(error) || fallbackDisabled) {
+          throw error;
+        }
+
+        const { Agent } = require("undici");
+        const insecureAgent = new Agent({
+          connect: {
+            rejectUnauthorized: false,
+          },
+        });
+
+        try {
+          console.warn(
+            "TLS 인증서 검증에 실패하여 rejectUnauthorized=false 설정으로 재시도합니다. " +
+              "보안 강화를 원하면 MENU_API_DISABLE_INSECURE_TLS_FALLBACK=1 을 설정하세요."
+          );
+          return await fetch(url, { dispatcher: insecureAgent });
+        } finally {
+          await insecureAgent.close();
+        }
+      }
+    }
+
     async function fetchMealRowsFromApi(apiKey, fromYmd, toYmd, pageSize) {
       if (!apiKey) {
         throw new Error("MENU_API environment variable is required to fetch meal data.");
@@ -526,7 +565,9 @@
           MLSV_TO_YMD: toYmd,
         });
 
-        const response = await fetch(`${MEAL_SERVICE_API_URL}?${params.toString()}`);
+        const response = await fetchWithTlsFallback(
+          `${MEAL_SERVICE_API_URL}?${params.toString()}`
+        );
 
         if (!response.ok) {
           throw new Error(`NEIS API request failed with status ${response.status}`);
