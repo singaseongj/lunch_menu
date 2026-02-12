@@ -31,6 +31,8 @@ npm run generate:data
 
 필요에 따라 `--out <경로>` 옵션을 추가해 다른 파일로 내보낼 수도 있습니다.
 
+일부 환경에서 NEIS API 인증서 체인을 검증하지 못해 `fetch failed` 오류가 발생하면, 스크립트가 자동으로 TLS 검증을 완화한 재시도를 수행합니다. 보안 정책상 이 동작이 필요 없다면 `MENU_API_DISABLE_INSECURE_TLS_FALLBACK=1` 환경 변수를 설정해 비활성화할 수 있습니다.
+
 ### 배포용 스크립트 복사
 
 브라우저에서 사용하는 `menu.js`를 `dist/` 디렉터리로 복사하려면 다음 명령을 실행합니다.
