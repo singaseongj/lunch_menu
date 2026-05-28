@@ -237,8 +237,8 @@ body {
 #visit-counter {
   margin: 0 auto calc(var(--spacing-unit) * 1.5);
   text-align: center;
-  color: #7fa3cf;
-  font-size: 0.95rem;
+  color: ##e3a0e8;
+  font-size: 0.8rem;
 }
 
 /* For touch devices (iOS, Android, etc.) */
