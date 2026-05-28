@@ -199,6 +199,15 @@
     dom.message.textContent = text || "";
   }
 
+  function escapeHtml(text) {
+    return String(text)
+      .replace(/&/g, "&amp;")
+      .replace(/</g, "&lt;")
+      .replace(/>/g, "&gt;")
+      .replace(/"/g, "&quot;")
+      .replace(/'/g, "&#39;");
+  }
+
   function renderEmptyTable(message) {
     if (!dom.tableBody) {
       return;
@@ -255,13 +264,12 @@
       const nutritionCell = document.createElement("td");
       const nutritionLines = [];
       if (calories) {
-        nutritionLines.push(`열량: ${calories}`);
+        nutritionLines.push(`열량: ${escapeHtml(calories)}`);
       }
       if (nutritionInfo) {
         nutritionLines.push(`영양: ${nutritionInfo}`);
       }
-      nutritionCell.textContent = nutritionLines.length ? nutritionLines.join("\n") : "-";
-      nutritionCell.style.whiteSpace = "pre-line";
+      nutritionCell.innerHTML = nutritionLines.length ? nutritionLines.join("<br/>") : "-";
 
       row.appendChild(mealCell);
       row.appendChild(menuCell);

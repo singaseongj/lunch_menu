@@ -1,4 +1,4 @@
-// Built on 2026-05-28T02:40:38.700Z
+// Built on 2026-05-28T02:50:03.295Z
 (function (global) {
   const MENU_JSON_PATH = "data/menu-data.json";
   const MEAL_SERVICE_API_URL = "https://open.neis.go.kr/hub/mealServiceDietInfo";
@@ -200,6 +200,15 @@
     dom.message.textContent = text || "";
   }
 
+  function escapeHtml(text) {
+    return String(text)
+      .replace(/&/g, "&amp;")
+      .replace(/</g, "&lt;")
+      .replace(/>/g, "&gt;")
+      .replace(/"/g, "&quot;")
+      .replace(/'/g, "&#39;");
+  }
+
   function renderEmptyTable(message) {
     if (!dom.tableBody) {
       return;
@@ -256,13 +265,12 @@
       const nutritionCell = document.createElement("td");
       const nutritionLines = [];
       if (calories) {
-        nutritionLines.push(`열량: ${calories}`);
+        nutritionLines.push(`열량: ${escapeHtml(calories)}`);
       }
       if (nutritionInfo) {
         nutritionLines.push(`영양: ${nutritionInfo}`);
       }
-      nutritionCell.textContent = nutritionLines.length ? nutritionLines.join("\n") : "-";
-      nutritionCell.style.whiteSpace = "pre-line";
+      nutritionCell.innerHTML = nutritionLines.length ? nutritionLines.join("<br/>") : "-";
 
       row.appendChild(mealCell);
       row.appendChild(menuCell);
