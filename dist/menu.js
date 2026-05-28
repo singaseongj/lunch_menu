@@ -1,4 +1,4 @@
-// Built on 2026-05-28T02:23:40.168Z
+// Built on 2026-05-28T02:40:38.700Z
 (function (global) {
   const MENU_JSON_PATH = "data/menu-data.json";
   const MEAL_SERVICE_API_URL = "https://open.neis.go.kr/hub/mealServiceDietInfo";
@@ -236,7 +236,8 @@
       const menuCell = document.createElement("td");
       const mealEntry = menuForDate[mealType] || {};
       const dishes = Array.isArray(mealEntry.items) ? mealEntry.items : [];
-      const calories = typeof mealEntry.calories === "string" ? mealEntry.calories : "-";
+      const nutritionInfo = typeof mealEntry.nutritionInfo === "string" ? mealEntry.nutritionInfo : "";
+      const calories = typeof mealEntry.calories === "string" ? mealEntry.calories : "";
 
       const list = document.createElement("ul");
       if (dishes.length === 0) {
@@ -252,12 +253,20 @@
       }
       menuCell.appendChild(list);
 
-      const calorieCell = document.createElement("td");
-      calorieCell.textContent = calories || "-";
+      const nutritionCell = document.createElement("td");
+      const nutritionLines = [];
+      if (calories) {
+        nutritionLines.push(`열량: ${calories}`);
+      }
+      if (nutritionInfo) {
+        nutritionLines.push(`영양: ${nutritionInfo}`);
+      }
+      nutritionCell.textContent = nutritionLines.length ? nutritionLines.join("\n") : "-";
+      nutritionCell.style.whiteSpace = "pre-line";
 
       row.appendChild(mealCell);
       row.appendChild(menuCell);
-      row.appendChild(calorieCell);
+      row.appendChild(nutritionCell);
       dom.tableBody.appendChild(row);
     });
 
@@ -493,15 +502,16 @@
 
         if (!accumulator[dateKey]) {
           accumulator[dateKey] = {
-            breakfast: { items: [], calories: "" },
-            lunch: { items: [], calories: "" },
-            dinner: { items: [], calories: "" },
+            breakfast: { items: [], calories: "", nutritionInfo: "" },
+            lunch: { items: [], calories: "", nutritionInfo: "" },
+            dinner: { items: [], calories: "", nutritionInfo: "" },
           };
         }
 
         accumulator[dateKey][mealType] = {
           items: parseDishList(row?.DDISH_NM),
           calories: typeof row?.CAL_INFO === "string" ? row.CAL_INFO.trim() : "",
+          nutritionInfo: typeof row?.NTR_INFO === "string" ? row.NTR_INFO.trim() : "",
         };
         return accumulator;
       }, {});
