@@ -223,6 +223,10 @@ body {
   margin-top: 0.35rem;
 }
 
+.menu-table__nutrition {
+  font-size: calc(1rem - 1pt);
+}
+
 .menu-card__message {
   margin-top: calc(var(--spacing-unit) * 1.1);
   font-size: 0.95rem;

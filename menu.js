@@ -262,6 +262,7 @@
       menuCell.appendChild(list);
 
       const nutritionCell = document.createElement("td");
+      nutritionCell.className = "menu-table__nutrition";
       const nutritionLines = [];
       if (calories) {
         nutritionLines.push(`열량: ${escapeHtml(calories)}`);

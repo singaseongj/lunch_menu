@@ -1,4 +1,4 @@
-// Built on 2026-05-28T02:50:03.295Z
+// Built on 2026-05-28T03:00:06.657Z
 (function (global) {
   const MENU_JSON_PATH = "data/menu-data.json";
   const MEAL_SERVICE_API_URL = "https://open.neis.go.kr/hub/mealServiceDietInfo";
@@ -263,6 +263,7 @@
       menuCell.appendChild(list);
 
       const nutritionCell = document.createElement("td");
+      nutritionCell.className = "menu-table__nutrition";
       const nutritionLines = [];
       if (calories) {
         nutritionLines.push(`열량: ${escapeHtml(calories)}`);
