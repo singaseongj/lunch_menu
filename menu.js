@@ -268,7 +268,7 @@
         nutritionLines.push(`열량: ${escapeHtml(calories)}`);
       }
       if (nutritionInfo) {
-        nutritionLines.push(`영양: ${nutritionInfo}`);
+        nutritionLines.push(`${nutritionInfo}`);
       }
       nutritionCell.innerHTML = nutritionLines.length ? nutritionLines.join("<br/>") : "-";
 
