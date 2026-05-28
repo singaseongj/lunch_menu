@@ -1,4 +1,4 @@
-// Built on 2026-02-12T02:29:54.110Z
+// Built on 2026-05-28T02:23:40.168Z
 (function (global) {
   const MENU_JSON_PATH = "data/menu-data.json";
   const MEAL_SERVICE_API_URL = "https://open.neis.go.kr/hub/mealServiceDietInfo";
@@ -207,7 +207,7 @@
     dom.tableBody.innerHTML = "";
     const row = document.createElement("tr");
     const cell = document.createElement("td");
-    cell.colSpan = 2;
+    cell.colSpan = 3;
     cell.className = "menu-table__placeholder";
     cell.textContent = message || "급식 정보가 없습니다.";
     row.appendChild(cell);
@@ -234,9 +234,9 @@
       mealCell.textContent = MENU_LABELS[mealType];
 
       const menuCell = document.createElement("td");
-      const dishes = Array.isArray(menuForDate[mealType])
-        ? menuForDate[mealType]
-        : [];
+      const mealEntry = menuForDate[mealType] || {};
+      const dishes = Array.isArray(mealEntry.items) ? mealEntry.items : [];
+      const calories = typeof mealEntry.calories === "string" ? mealEntry.calories : "-";
 
       const list = document.createElement("ul");
       if (dishes.length === 0) {
@@ -252,8 +252,12 @@
       }
       menuCell.appendChild(list);
 
+      const calorieCell = document.createElement("td");
+      calorieCell.textContent = calories || "-";
+
       row.appendChild(mealCell);
       row.appendChild(menuCell);
+      row.appendChild(calorieCell);
       dom.tableBody.appendChild(row);
     });
 
@@ -489,13 +493,16 @@
 
         if (!accumulator[dateKey]) {
           accumulator[dateKey] = {
-            breakfast: [],
-            lunch: [],
-            dinner: [],
+            breakfast: { items: [], calories: "" },
+            lunch: { items: [], calories: "" },
+            dinner: { items: [], calories: "" },
           };
         }
 
-        accumulator[dateKey][mealType] = parseDishList(row?.DDISH_NM);
+        accumulator[dateKey][mealType] = {
+          items: parseDishList(row?.DDISH_NM),
+          calories: typeof row?.CAL_INFO === "string" ? row.CAL_INFO.trim() : "",
+        };
         return accumulator;
       }, {});
     }
