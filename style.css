@@ -233,6 +233,14 @@ body {
   color: var(--text-secondary);
 }
 
+
+#visit-counter {
+  margin: 0 auto calc(var(--spacing-unit) * 1.5);
+  text-align: center;
+  color: #6f95c5;
+  font-size: 0.95rem;
+}
+
 /* For touch devices (iOS, Android, etc.) */
 @media (hover: none) and (pointer: coarse) {
   #menuDateInput {
