@@ -76,10 +76,32 @@
 
     <script>
       fetch("https://script.google.com/macros/s/AKfycbzGWSabHvkVOSVaVxkiEjiPm-z3O-Z8ZZiikkUaRh-wSCQY4JBeevU3zdQJSc0v5hcu/exec")
-        .then(res => res.json())
-        .then(data => {
-          document.getElementById("visit-counter").innerText =
-            `today ${data.daily} ｜ total ${data.total}`;
+        .then((res) => res.text())
+        .then((text) => {
+          const counter = document.getElementById("visit-counter");
+          if (!counter) {
+            return;
+          }
+
+          let data;
+          try {
+            data = JSON.parse(text);
+          } catch {
+            console.warn("Visit counter response is not JSON:", text);
+            counter.innerText = "방문자 수를 불러오지 못했습니다.";
+            return;
+          }
+
+          const daily = data?.daily ?? "-";
+          const total = data?.total ?? "-";
+          counter.innerText = `today ${daily} ｜ total ${total}`;
+        })
+        .catch((error) => {
+          console.error("Visit counter fetch failed:", error);
+          const counter = document.getElementById("visit-counter");
+          if (counter) {
+            counter.innerText = "방문자 수를 불러오지 못했습니다.";
+          }
         });
     </script>
 
