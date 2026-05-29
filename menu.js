@@ -1,5 +1,6 @@
 (function (global) {
   const MENU_JSON_PATH = "data/menu-data.json";
+  const VOTING_WEB_APP_URL = "https://script.google.com/macros/s/AKfycbyWF5Dx2ARrUYMx45P1z28r0-e7yuTa54LaVyRmcuYBY0l5AoFM2vWs2drouC81tMMY/exec";
   const MEAL_SERVICE_API_URL = "https://open.neis.go.kr/hub/mealServiceDietInfo";
   const SCHOOL_INFO = {
     educationOfficeCode: "G10",
@@ -208,6 +209,62 @@
       .replace(/'/g, "&#39;");
   }
 
+  async function submitVote(foodName, rating) {
+    const numericRating = Number(rating);
+    if (!foodName || !Number.isInteger(numericRating) || numericRating < 1 || numericRating > 5) {
+      showMessage("별점은 1점부터 5점까지 선택할 수 있습니다.");
+      return;
+    }
+
+    showMessage(`${foodName}에 ${numericRating}점을 전송하고 있습니다.`);
+
+    try {
+      await fetch(VOTING_WEB_APP_URL, {
+        method: "POST",
+        mode: "no-cors",
+        headers: {
+          "Content-Type": "text/plain;charset=utf-8",
+        },
+        body: JSON.stringify({
+          name: foodName,
+          rating: numericRating,
+        }),
+      });
+
+      showMessage(`${foodName} ${numericRating}점 투표를 보냈습니다.`);
+    } catch (error) {
+      console.error("별점 전송에 실패했습니다.", error);
+      showMessage("별점 전송에 실패했습니다. 잠시 후 다시 시도해 주세요.");
+    }
+  }
+
+  function createRatingControls(dish) {
+    const container = document.createElement("div");
+    container.className = "rating-form";
+    container.setAttribute("aria-label", `${dish} 별점 주기`);
+
+    const stars = document.createElement("div");
+    stars.className = "rating-stars";
+    stars.setAttribute("role", "group");
+    stars.setAttribute("aria-label", "1점부터 5점까지 별점 선택");
+
+    for (let value = 5; value >= 1; value -= 1) {
+      const button = document.createElement("button");
+      button.type = "button";
+      button.className = "rating-stars__button";
+      button.textContent = "★";
+      button.title = `${value}점`;
+      button.setAttribute("aria-label", `${dish} ${value}점 보내기`);
+      button.addEventListener("click", () => {
+        submitVote(dish, value);
+      });
+      stars.appendChild(button);
+    }
+
+    container.appendChild(stars);
+    return container;
+  }
+
   function renderEmptyTable(message) {
     if (!dom.tableBody) {
       return;
@@ -255,7 +312,11 @@
       } else {
         dishes.forEach(function (dish) {
           const li = document.createElement("li");
-          li.textContent = dish;
+          const dishName = document.createElement("span");
+          dishName.className = "menu-table__dish-name";
+          dishName.textContent = dish;
+          li.appendChild(dishName);
+          li.appendChild(createRatingControls(dish));
           list.appendChild(li);
         });
       }

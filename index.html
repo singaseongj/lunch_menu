@@ -35,17 +35,23 @@
       <main class="page__content" id="mealInfoWrapper">
         <section class="menu-card" aria-live="polite">
           <div class="menu-card__controls">
-            <label class="menu-card__date-picker">
-              <input
-                type="date"
-                id="menuDateInput"
-                aria-label="급식 날짜 선택"
-              />
-              <span class="calendar-button">
-                <span aria-hidden="true">📅</span>
-                <span class="calendar-button__label">날짜 선택</span>
-              </span>
-            </label>
+            <div class="menu-card__action-group">
+              <label class="menu-card__date-picker">
+                <input
+                  type="date"
+                  id="menuDateInput"
+                  aria-label="급식 날짜 선택"
+                />
+                <span class="calendar-button">
+                  <span aria-hidden="true">📅</span>
+                  <span class="calendar-button__label">날짜 선택</span>
+                </span>
+              </label>
+              <a class="results-button" href="vote-results.html">
+                <span aria-hidden="true">⭐</span>
+                <span>투표 결과</span>
+              </a>
+            </div>
             <div class="menu-card__meta">
               <p id="selectedDateLabel" class="menu-card__date">로딩 중...</p>
               <p id="menuUpdatedAt" class="menu-card__updated"></p>
