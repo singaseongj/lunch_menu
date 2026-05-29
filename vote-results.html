@@ -1,0 +1,64 @@
+<!DOCTYPE html>
+<html lang="ko">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <title>급식 메뉴 투표 결과</title>
+    <link rel="apple-touch-icon" sizes="180x180" href="src/apple-touch-icon.png" />
+    <link
+      rel="apple-touch-icon-precomposed"
+      sizes="180x180"
+      href="src/apple-touch-icon.png"
+    />
+    <link rel="icon" type="image/png" sizes="32x32" href="src/favicon-32x32.png" />
+    <link rel="icon" type="image/png" sizes="16x16" href="src/favicon-16x16.png" />
+    <link rel="manifest" href="src/site.webmanifest" />
+    <link rel="shortcut icon" href="src/favicon.ico" />
+    <link rel="stylesheet" href="style.css" />
+  </head>
+  <body>
+    <div class="page">
+      <header class="page__header">
+        <a class="home-button" href="index.html" aria-label="급식 메뉴로 돌아가기">
+          <span aria-hidden="true">🍽️</span>
+          <span class="visually-hidden">급식 메뉴로 돌아가기</span>
+        </a>
+        <h1>급식 메뉴 투표 결과</h1>
+        <p class="page__tagline">
+          급식 메뉴별 별점 평균과 투표 수를 확인해 보세요.
+        </p>
+      </header>
+      <main class="page__content">
+        <section class="menu-card vote-results" aria-live="polite">
+          <div class="vote-results__header">
+            <div>
+              <p class="menu-card__date">⭐ 별점 결과</p>
+              <p id="voteResultsUpdatedAt" class="menu-card__updated"></p>
+            </div>
+            <button class="results-button results-button--plain" id="refreshVoteResults" type="button">
+              새로고침
+            </button>
+          </div>
+          <table class="menu-table">
+            <thead>
+              <tr>
+                <th scope="col">메뉴</th>
+                <th scope="col">평균 별점</th>
+                <th scope="col">투표 수</th>
+              </tr>
+            </thead>
+            <tbody id="voteResultsBody">
+              <tr>
+                <td colspan="3" class="menu-table__placeholder">
+                  투표 결과를 불러오는 중입니다.
+                </td>
+              </tr>
+            </tbody>
+          </table>
+          <p id="voteResultsMessage" class="menu-card__message" role="status"></p>
+        </section>
+      </main>
+    </div>
+    <script src="vote-results.js"></script>
+  </body>
+</html>
