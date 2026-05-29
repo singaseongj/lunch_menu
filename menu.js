@@ -1,6 +1,7 @@
 (function (global) {
   const MENU_JSON_PATH = "data/menu-data.json";
   const VOTING_WEB_APP_URL = "https://script.google.com/macros/s/AKfycbyWF5Dx2ARrUYMx45P1z28r0-e7yuTa54LaVyRmcuYBY0l5AoFM2vWs2drouC81tMMY/exec";
+  const RATING_STORAGE_KEY = "lunch-menu-ratings";
   const MEAL_SERVICE_API_URL = "https://open.neis.go.kr/hub/mealServiceDietInfo";
   const SCHOOL_INFO = {
     educationOfficeCode: "G10",
@@ -29,6 +30,7 @@
     updatedLabel: null,
     tableBody: null,
     message: null,
+    submitButton: null,
   };
 
   const state = {
@@ -36,7 +38,9 @@
     availableDates: [],
     generatedAt: "",
     selectedDate: null,
+    ratings: {},
     eventsAttached: false,
+    isSubmittingRatings: false,
   };
 
   let isInitialized = false;
@@ -50,6 +54,7 @@
     dom.updatedLabel = document.getElementById("menuUpdatedAt");
     dom.tableBody = document.getElementById("menuTableBody");
     dom.message = document.getElementById("menuMessage");
+    dom.submitButton = document.getElementById("submitRatingsButton");
   }
 
   function attachEvents() {
@@ -74,6 +79,10 @@
         // Let the native click behavior work
         e.stopPropagation();
       });
+    }
+
+    if (dom.submitButton) {
+      dom.submitButton.addEventListener("click", submitSelectedDateRatings);
     }
 
     // Improved date picker trigger for desktop and mobile
@@ -209,36 +218,186 @@
       .replace(/'/g, "&#39;");
   }
 
-  async function submitVote(foodName, rating) {
+  function loadSavedRatings() {
+    if (typeof localStorage === "undefined") {
+      state.ratings = {};
+      return;
+    }
+
+    try {
+      const savedRatings = JSON.parse(
+        localStorage.getItem(RATING_STORAGE_KEY) || "{}"
+      );
+      state.ratings =
+        savedRatings && typeof savedRatings === "object" && !Array.isArray(savedRatings)
+          ? savedRatings
+          : {};
+    } catch (error) {
+      console.warn("저장된 별점 정보를 읽지 못했습니다.", error);
+      state.ratings = {};
+    }
+  }
+
+  function saveRatings() {
+    if (typeof localStorage === "undefined") {
+      return;
+    }
+
+    try {
+      localStorage.setItem(RATING_STORAGE_KEY, JSON.stringify(state.ratings));
+    } catch (error) {
+      console.warn("별점 정보를 저장하지 못했습니다.", error);
+    }
+  }
+
+  function getRatingKey(dateKey, mealType, dish) {
+    return [dateKey, mealType, dish].join("|");
+  }
+
+  function getSavedRating(dateKey, mealType, dish) {
+    const rating = Number(
+      state.ratings[getRatingKey(dateKey, mealType, dish)]?.rating
+    );
+    return Number.isInteger(rating) && rating >= 1 && rating <= 5 ? rating : 0;
+  }
+
+  function setSavedRating(dateKey, mealType, dish, rating) {
     const numericRating = Number(rating);
-    if (!foodName || !Number.isInteger(numericRating) || numericRating < 1 || numericRating > 5) {
+    if (
+      !dateKey ||
+      !mealType ||
+      !dish ||
+      !Number.isInteger(numericRating) ||
+      numericRating < 1 ||
+      numericRating > 5
+    ) {
       showMessage("별점은 1점부터 5점까지 선택할 수 있습니다.");
       return;
     }
 
-    showMessage(`${foodName}에 ${numericRating}점을 전송하고 있습니다.`);
+    state.ratings[getRatingKey(dateKey, mealType, dish)] = {
+      date: dateKey,
+      mealType,
+      mealLabel: MENU_LABELS[mealType] || mealType,
+      name: dish,
+      rating: numericRating,
+    };
+    saveRatings();
+    showMessage(`${dish}에 ${numericRating}점을 선택했습니다.`);
+  }
+
+  function updateStarSelection(stars, selectedRating) {
+    const numericRating = Number(selectedRating);
+    stars.querySelectorAll(".rating-stars__button").forEach((button) => {
+      const buttonValue = Number(button.dataset.rating);
+      const isSelected =
+        Number.isInteger(numericRating) &&
+        numericRating >= 1 &&
+        numericRating <= 5 &&
+        buttonValue <= numericRating;
+
+      button.classList.toggle("rating-stars__button--selected", isSelected);
+      button.setAttribute(
+        "aria-pressed",
+        buttonValue === numericRating ? "true" : "false"
+      );
+    });
+  }
+
+  function getRatingsForDate(dateKey) {
+    const menuForDate = state.menuData?.[dateKey];
+    if (!menuForDate) {
+      return { ratings: [], missing: [] };
+    }
+
+    return Object.keys(MENU_LABELS).reduce(
+      (result, mealType) => {
+        const mealEntry = menuForDate[mealType] || {};
+        const dishes = Array.isArray(mealEntry.items) ? mealEntry.items : [];
+
+        dishes.forEach((dish) => {
+          const savedRating = getSavedRating(dateKey, mealType, dish);
+          if (savedRating) {
+            result.ratings.push({
+              date: dateKey,
+              mealType,
+              mealLabel: MENU_LABELS[mealType],
+              name: dish,
+              rating: savedRating,
+            });
+          } else {
+            result.missing.push(dish);
+          }
+        });
+
+        return result;
+      },
+      { ratings: [], missing: [] }
+    );
+  }
+
+  function setSubmitButtonState() {
+    if (!dom.submitButton) {
+      return;
+    }
+
+    const { ratings } = getRatingsForDate(state.selectedDate);
+    const canSubmit = ratings.length > 0 && !state.isSubmittingRatings;
+    dom.submitButton.disabled = !canSubmit;
+    dom.submitButton.textContent = state.isSubmittingRatings
+      ? "별점 전송 중..."
+      : "별점 보내기";
+  }
+
+  function submitRatingRequest(ratingEntry) {
+    return fetch(VOTING_WEB_APP_URL, {
+      method: "POST",
+      mode: "no-cors",
+      headers: {
+        "Content-Type": "text/plain;charset=utf-8",
+      },
+      body: JSON.stringify({
+        name: ratingEntry.name,
+        rating: ratingEntry.rating,
+      }),
+    });
+  }
+
+  async function submitSelectedDateRatings() {
+    if (state.isSubmittingRatings) {
+      return;
+    }
+
+    const dateKey = state.selectedDate;
+    const { ratings } = getRatingsForDate(dateKey);
+
+    if (!ratings.length) {
+      showMessage("보낼 별점을 먼저 선택해 주세요.");
+      setSubmitButtonState();
+      return;
+    }
+
+    state.isSubmittingRatings = true;
+    setSubmitButtonState();
+    showMessage(
+      `${formatDateLabel(dateKey)} 별점 ${ratings.length}개를 전송하고 있습니다.`
+    );
 
     try {
-      await fetch(VOTING_WEB_APP_URL, {
-        method: "POST",
-        mode: "no-cors",
-        headers: {
-          "Content-Type": "text/plain;charset=utf-8",
-        },
-        body: JSON.stringify({
-          name: foodName,
-          rating: numericRating,
-        }),
-      });
+      await Promise.all(ratings.map(submitRatingRequest));
 
-      showMessage(`${foodName} ${numericRating}점 투표를 보냈습니다.`);
+      showMessage(`선택한 별점 ${ratings.length}개를 모두 보냈습니다.`);
     } catch (error) {
       console.error("별점 전송에 실패했습니다.", error);
       showMessage("별점 전송에 실패했습니다. 잠시 후 다시 시도해 주세요.");
+    } finally {
+      state.isSubmittingRatings = false;
+      setSubmitButtonState();
     }
   }
 
-  function createRatingControls(dish) {
+  function createRatingControls(dish, mealType, dateKey) {
+    const selectedRating = getSavedRating(dateKey, mealType, dish);
     const container = document.createElement("div");
     container.className = "rating-form";
     container.setAttribute("aria-label", `${dish} 별점 주기`);
@@ -254,13 +413,17 @@
       button.className = "rating-stars__button";
       button.textContent = "★";
       button.title = `${value}점`;
-      button.setAttribute("aria-label", `${dish} ${value}점 보내기`);
+      button.dataset.rating = String(value);
+      button.setAttribute("aria-label", `${dish} ${value}점 선택`);
       button.addEventListener("click", () => {
-        submitVote(dish, value);
+        setSavedRating(dateKey, mealType, dish, value);
+        updateStarSelection(stars, value);
+        setSubmitButtonState();
       });
       stars.appendChild(button);
     }
 
+    updateStarSelection(stars, selectedRating);
     container.appendChild(stars);
     return container;
   }
@@ -289,6 +452,7 @@
     if (!menuForDate) {
       renderEmptyTable("선택한 날짜의 급식 정보가 없습니다.");
       showMessage("교육정보개방포털에서 제공하지 않은 날짜입니다.");
+      setSubmitButtonState();
       return;
     }
 
@@ -316,7 +480,7 @@
           dishName.className = "menu-table__dish-name";
           dishName.textContent = dish;
           li.appendChild(dishName);
-          li.appendChild(createRatingControls(dish));
+          li.appendChild(createRatingControls(dish, mealType, dateKey));
           list.appendChild(li);
         });
       }
@@ -340,6 +504,7 @@
     });
 
     showMessage("선택한 날짜의 급식 정보를 확인했습니다.");
+    setSubmitButtonState();
   }
 
   function updateSelectedDate(dateKey) {
@@ -470,6 +635,7 @@
     isInitialized = true;
 
     cacheDom();
+    loadSavedRatings();
     attachEvents();
     requestApiMealInfo(
       SCHOOL_INFO.schoolCode,
