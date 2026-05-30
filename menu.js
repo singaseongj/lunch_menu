@@ -349,7 +349,32 @@
       : "별점 보내기";
   }
 
-  function submitRatingRequest(ratingEntry) {
+  async function requestVotingToken() {
+    const response = await fetch(VOTING_WEB_APP_URL, {
+      method: "GET",
+      cache: "no-store",
+      headers: {
+        "Accept": "application/json",
+      },
+    });
+
+    if (!response.ok) {
+      throw new Error(`Voting token request failed with status ${response.status}`);
+    }
+
+    const payload = await response.json();
+    const token = typeof payload?.token === "string" ? payload.token.trim() : "";
+
+    if (!payload?.ok || !token) {
+      throw new Error(payload?.error || "Voting token was not returned by the server.");
+    }
+
+    return token;
+  }
+
+  async function submitRatingRequest(ratingEntry) {
+    const token = await requestVotingToken();
+
     return fetch(VOTING_WEB_APP_URL, {
       method: "POST",
       mode: "no-cors",
@@ -357,6 +382,7 @@
         "Content-Type": "text/plain;charset=utf-8",
       },
       body: JSON.stringify({
+        token,
         name: ratingEntry.name,
         rating: ratingEntry.rating,
       }),
