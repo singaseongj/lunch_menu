@@ -1,4 +1,4 @@
-// Built on 2026-05-29T05:54:33.051Z
+// Built on 2026-05-30T13:28:36.058Z
 (function (global) {
   const MENU_JSON_PATH = "data/menu-data.json";
   const VOTING_WEB_APP_URL = "https://script.google.com/macros/s/AKfycbyWF5Dx2ARrUYMx45P1z28r0-e7yuTa54LaVyRmcuYBY0l5AoFM2vWs2drouC81tMMY/exec";
@@ -350,7 +350,32 @@
       : "별점 보내기";
   }
 
-  function submitRatingRequest(ratingEntry) {
+  async function requestVotingToken() {
+    const response = await fetch(VOTING_WEB_APP_URL, {
+      method: "GET",
+      cache: "no-store",
+      headers: {
+        "Accept": "application/json",
+      },
+    });
+
+    if (!response.ok) {
+      throw new Error(`Voting token request failed with status ${response.status}`);
+    }
+
+    const payload = await response.json();
+    const token = typeof payload?.token === "string" ? payload.token.trim() : "";
+
+    if (!payload?.ok || !token) {
+      throw new Error(payload?.error || "Voting token was not returned by the server.");
+    }
+
+    return token;
+  }
+
+  async function submitRatingRequest(ratingEntry) {
+    const token = await requestVotingToken();
+
     return fetch(VOTING_WEB_APP_URL, {
       method: "POST",
       mode: "no-cors",
@@ -358,6 +383,7 @@
         "Content-Type": "text/plain;charset=utf-8",
       },
       body: JSON.stringify({
+        token,
         name: ratingEntry.name,
         rating: ratingEntry.rating,
       }),
