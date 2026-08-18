@@ -1,6 +1,6 @@
 (function (global) {
   const MENU_JSON_PATH = "data/menu-data.json";
-  const VOTING_WEB_APP_URL = "https://script.google.com/macros/s/AKfycbyWF5Dx2ARrUYMx45P1z28r0-e7yuTa54LaVyRmcuYBY0l5AoFM2vWs2drouC81tMMY/exec";
+  const VOTING_WEB_APP_URL = "";
   const RATING_STORAGE_KEY = "lunch-menu-ratings";
   const MEAL_SERVICE_API_URL = "https://open.neis.go.kr/hub/mealServiceDietInfo";
   const SCHOOL_INFO = {
