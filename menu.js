@@ -261,6 +261,7 @@
     return Number.isInteger(rating) && rating >= 1 && rating <= 5 ? rating : 0;
   }
 
+  /* Star selection is temporarily disabled on the index page.
   function setSavedRating(dateKey, mealType, dish, rating) {
     const numericRating = Number(rating);
     if (
@@ -303,6 +304,7 @@
       );
     });
   }
+  */
 
   function getRatingsForDate(dateKey) {
     const menuForDate = state.menuData?.[dateKey];

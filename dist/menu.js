@@ -1,4 +1,4 @@
-// Built on 2026-08-18T03:48:42.681Z
+// Built on 2026-08-18T03:58:31.338Z
 (function (global) {
   const MENU_JSON_PATH = "data/menu-data.json";
   const VOTING_WEB_APP_URL = "";
@@ -262,6 +262,7 @@
     return Number.isInteger(rating) && rating >= 1 && rating <= 5 ? rating : 0;
   }
 
+  /* Star selection is temporarily disabled on the index page.
   function setSavedRating(dateKey, mealType, dish, rating) {
     const numericRating = Number(rating);
     if (
@@ -304,6 +305,7 @@
       );
     });
   }
+  */
 
   function getRatingsForDate(dateKey) {
     const menuForDate = state.menuData?.[dateKey];
