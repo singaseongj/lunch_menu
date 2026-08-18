@@ -261,6 +261,7 @@
     return Number.isInteger(rating) && rating >= 1 && rating <= 5 ? rating : 0;
   }
 
+  /* Star selection is temporarily disabled on the index page.
   function setSavedRating(dateKey, mealType, dish, rating) {
     const numericRating = Number(rating);
     if (
@@ -303,6 +304,7 @@
       );
     });
   }
+  */
 
   function getRatingsForDate(dateKey) {
     const menuForDate = state.menuData?.[dateKey];
@@ -422,6 +424,7 @@
     }
   }
 
+  /* Voting controls are temporarily disabled on the index page.
   function createRatingControls(dish, mealType, dateKey) {
     const selectedRating = getSavedRating(dateKey, mealType, dish);
     const container = document.createElement("div");
@@ -453,6 +456,7 @@
     container.appendChild(stars);
     return container;
   }
+  */
 
   function renderEmptyTable(message) {
     if (!dom.tableBody) {
@@ -506,7 +510,8 @@
           dishName.className = "menu-table__dish-name";
           dishName.textContent = dish;
           li.appendChild(dishName);
-          li.appendChild(createRatingControls(dish, mealType, dateKey));
+          // Voting is temporarily disabled on the index page.
+          // li.appendChild(createRatingControls(dish, mealType, dateKey));
           list.appendChild(li);
         });
       }
