@@ -1,7 +1,7 @@
-// Built on 2026-05-30T13:28:36.058Z
+// Built on 2026-08-18T03:48:42.681Z
 (function (global) {
   const MENU_JSON_PATH = "data/menu-data.json";
-  const VOTING_WEB_APP_URL = "https://script.google.com/macros/s/AKfycbyWF5Dx2ARrUYMx45P1z28r0-e7yuTa54LaVyRmcuYBY0l5AoFM2vWs2drouC81tMMY/exec";
+  const VOTING_WEB_APP_URL = "";
   const RATING_STORAGE_KEY = "lunch-menu-ratings";
   const MEAL_SERVICE_API_URL = "https://open.neis.go.kr/hub/mealServiceDietInfo";
   const SCHOOL_INFO = {
@@ -423,6 +423,7 @@
     }
   }
 
+  /* Voting controls are temporarily disabled on the index page.
   function createRatingControls(dish, mealType, dateKey) {
     const selectedRating = getSavedRating(dateKey, mealType, dish);
     const container = document.createElement("div");
@@ -454,6 +455,7 @@
     container.appendChild(stars);
     return container;
   }
+  */
 
   function renderEmptyTable(message) {
     if (!dom.tableBody) {
@@ -507,7 +509,8 @@
           dishName.className = "menu-table__dish-name";
           dishName.textContent = dish;
           li.appendChild(dishName);
-          li.appendChild(createRatingControls(dish, mealType, dateKey));
+          // Voting is temporarily disabled on the index page.
+          // li.appendChild(createRatingControls(dish, mealType, dateKey));
           list.appendChild(li);
         });
       }
